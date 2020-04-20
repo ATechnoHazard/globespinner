@@ -1,3 +1,4 @@
+astroid==2.3.3
 beautifulsoup4==4.9.0
 cachetools==4.1.0
 certifi==2020.4.5.1
@@ -12,12 +13,16 @@ googleapis-common-protos==1.51.0
 grpcio==1.28.1
 html2text==2020.1.16
 idna==2.9
+isort==4.3.21
+lazy-object-proxy==1.4.3
 lxml==4.5.0
 matrix-client==0.3.2
+mccabe==0.6.1
 protobuf==3.11.3
 pyasn1==0.4.8
 pyasn1-modules==0.2.8
 pycparser==2.20
+pylint==2.4.4
 pyOpenSSL==19.1.0
 python-terraform==0.10.1
 pytz==2019.3
@@ -26,5 +31,6 @@ rsa==4.0
 six==1.14.0
 soupsieve==2.0
 urllib3==1.25.9
+wrapt==1.11.2
 zulip==0.6.4
 zulip-bots==0.6.4

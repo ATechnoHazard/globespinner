@@ -3,3 +3,4 @@
 zuliprc
 __pycache__
 env
+creds.json

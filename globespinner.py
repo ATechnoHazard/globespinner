@@ -10,8 +10,6 @@ DO_PATH = os.path.join(os.curdir,  "configs", "digitalocean")
 AWS_PATH = os.path.join(os.curdir,  "configs", "aws")
 GC_PATH = os.path.join(os.curdir,  "configs", "gcp")
 
-details = {}
-
 
 class BotHandler(object):
     def usage(self) -> str:
@@ -20,6 +18,9 @@ class BotHandler(object):
         '''
 
     def handle_message(self, message, bot_handler) -> None:
+        print(message)
+        sender = str(message["sender_id"])
+        details = bot_handler.storage.get(str(sender))
         split_text = message["full_content"].split()
         command = split_text[0]
         args = split_text[1:]
@@ -28,23 +29,23 @@ class BotHandler(object):
             dispatcher.dispatch(command, args, bot_handler, message)
 
         fulfillment_text, deploy = detect_intent_texts("globespinner-xwpvfo",
-                                                       "12345678", message["full_content"], "en-US")
+                                                       str(sender), message["full_content"], "en-US", bot_handler)
         bot_handler.send_reply(message, fulfillment_text)
 
         if deploy:
-            if details["12345678"]["provider"] == "DigitalOcean":
+            if details[sender]["provider"] == "DigitalOcean":
                 handle_do(bot_handler, message, args)
                 return
 
-            if details["12345678"]["provider"] == "Google Cloud":
+            if details[sender]["provider"] == "Google Cloud":
                 handle_gcp(bot_handler, message, args)
                 return
 
-            if details["12345678"]["provider"] == "Amazon Web Services":
+            if details[sender]["provider"] == "Amazon Web Services":
                 handle_aws(bot_handler, message, args)
                 return
 
-            if details["12345678"]["provider"] == "Microsoft Azure":
+            if details[sender]["provider"] == "Microsoft Azure":
                 bot_handler.send_reply(
                     message, "We currently don't support this provider.")
                 return
@@ -54,9 +55,10 @@ handler_class = BotHandler
 
 
 def handle_do(bot_handler, message, args: List[str]):
+    details = bot_handler.storage.get(str(message["sender_id"]))
     t.init(DO_PATH)
     bot_handler.send_reply(message, "Creating your droplet...")
-    deets = details["12345678"]
+    deets = details[str(message["sender_id"])]
 
     return_code, stdout, stderr = t.apply(DO_PATH,
                                           vars={"image": deets["os"], "name": "Test-droplet", "size": get_instance_type("DigitalOcean", deets["memory"], deets["processor"]), "region": deets["region"]}, **{"skip_plan": True, "auto_approve": IsFlagged, "capture_output": True})
@@ -71,7 +73,8 @@ def handle_do(bot_handler, message, args: List[str]):
 
 def handle_aws(bot_handler, message, args: List[str]) -> None:
     t.init(AWS_PATH)
-    deets = details["12345678"]
+    details = bot_handler.storage.get(str(message["sender_id"]))
+    deets = details[str(message["sender_id"])]
     bot_handler.send_reply(message, "Creating your ec2 instance...")
     return_code, stdout, stderr = t.apply(AWS_PATH, vars={"ami": deets["ami"]}, **{
             "skip_plan": True, "auto_approve": IsFlagged, "capture_output": True})
@@ -84,7 +87,8 @@ def handle_aws(bot_handler, message, args: List[str]) -> None:
 
 def handle_gcp(bot_handler, message, args: List[str]):
     t.init(GC_PATH)
-    deets = details["12345678"]
+    details = bot_handler.storage.get(str(message["sender_id"]))
+    deets = details[str(message["sender_id"])]
     return_code, stdout, stderr = bot_handler.send_reply(message, "Creating your Compute instance...")
     t.apply(GC_PATH, vars={"region": deets["region"], "zone": deets["region"]+"b", "type": get_instance_type("Google Cloud", deets["memory"], deets["processor"]), "image": "ubuntu-os-cloud/ubuntu-1804-lts" }, **{"skip_plan": True,
                                  "auto_approve": IsFlagged, "capture_output": True})
@@ -96,7 +100,7 @@ def handle_gcp(bot_handler, message, args: List[str]):
 
 
 
-def detect_intent_texts(project_id, session_id, text, language_code):
+def detect_intent_texts(project_id, session_id, text, language_code, bot_handler):
     """Returns the result of detect intent with texts as inputs.
 
     Using the same `session_id` between requests allows continuation
@@ -122,21 +126,23 @@ def detect_intent_texts(project_id, session_id, text, language_code):
         response.query_result.intent_detection_confidence))
     print('Fulfillment text: {}\n'.format(
         response.query_result.fulfillment_text))
-    # print('Parameters: {}\n'.format(
-    #     response.query_result.parameters))
 
     if(response.query_result.intent.display_name == "Deploy intent - digitalocean" and response.query_result.all_required_params_present):
         params = response.query_result.parameters
+        details = details = bot_handler.storage.get(session_id)
         details[session_id] = {}
         details[session_id]["provider"] = params["provider"]
+        bot_handler.storage.put(session_id, details)
         return response.query_result.fulfillment_text, False
 
     if(response.query_result.intent.display_name == "Get deployment details" and response.query_result.all_required_params_present):
         params = response.query_result.parameters
+        details = bot_handler.storage.get(session_id)
         details[session_id]["memory"] = params["memory"]
         details[session_id]["os"] = params["os"]
         details[session_id]["processor"] = params["processor"]
         details[session_id]["region"] = params["region"]
+        bot_handler.storage.put(session_id, details)
         return response.query_result.fulfillment_text, False
 
     if(response.query_result.intent.display_name == "Get deployment details - yes"):
