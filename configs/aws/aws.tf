@@ -4,10 +4,12 @@ variable "region" {
 
 variable "access_key" {
     description = "Access key for AWS service account"
+    default = ""
 }
 
 variable "secret_key" {
   description = "Secret key for AWS service account"
+  default = ""
 }
 
 data "aws_ami" "image" {

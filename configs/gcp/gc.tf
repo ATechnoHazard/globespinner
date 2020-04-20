@@ -15,7 +15,7 @@ variable "image" {
 }
 
 provider "google" {
-  credentials = file("/home/sphericalkat/PycharmProjects/globespinner/creds.json")
+  credentials = file("creds.json")
   project     = "globespinner-xwpvfo"
   region      =  var.region
   zone        =  var.zone

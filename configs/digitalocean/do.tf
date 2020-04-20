@@ -1,5 +1,6 @@
 variable "do_token" {
     description = "DigitalOcean API Token"
+    default = ""
 }
 
 variable "name" {
