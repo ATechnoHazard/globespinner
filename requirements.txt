@@ -4,7 +4,7 @@ cachetools==4.1.0
 certifi==2020.4.5.1
 cffi==1.14.0
 chardet==3.0.4
-cryptography==2.9
+cryptography==3.2
 dialogflow==0.8.0
 distro==1.5.0
 google-api-core==1.17.0
